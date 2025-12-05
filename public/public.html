@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SmlCredit - Public Debt View">
+    <title>SmlCredit - Debt Status</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="public-container">
+        <header class="app-header">
+            <h1 class="app-title">💳 SmlCredit</h1>
+            <p class="app-subtitle">Public Debt View</p>
+        </header>
+
+        <div class="public-card" id="publicCard">
+            <div class="public-header">
+                <div class="public-badge" id="publicBadge">Loading...</div>
+                <h2 class="public-name" id="publicName">-</h2>
+                <div class="public-amount" id="publicAmount">0.00 TND</div>
+                <div id="publicExtraInfo" class="mt-sm"></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-label">
+                    <span>Debt Status</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="mt-lg">
+                <h3 class="public-section-title">Transaction History</h3>
+                <div class="transaction-list" id="publicTransactionList">
+                    <div class="empty-state">
+                        <p>No transactions yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-lg">
+            <p style="color: var(--text-muted); font-size: 0.875rem;">
+                This is a read-only view. Powered by <strong>SmlCredit</strong>.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataParam = urlParams.get('data');
+        const entityTypeParam = urlParams.get('type');
+        const entityIdParam = urlParams.get('id');
+
+        function isOverdue(entity) {
+            if (!entity.nextDueDate || entity.totalDebt <= 0) return false;
+            const today = new Date();
+            const dueDate = new Date(entity.nextDueDate);
+            dueDate.setHours(23, 59, 59, 999);
+            return today > dueDate;
+        }
+
+        function loadPublicData() {
+            const publicCard = document.getElementById('publicCard');
+            const badge = document.getElementById('publicBadge');
+            const nameEl = document.getElementById('publicName');
+            const amountEl = document.getElementById('publicAmount');
+            const extraInfoEl = document.getElementById('publicExtraInfo');
+            const progressFill = document.getElementById('progressFill');
+            const progressPercent = document.getElementById('progressPercent');
+            const transactionList = document.getElementById('publicTransactionList');
+
+            let entity = null;
+            let entityType = null;
+
+            try {
+                if (dataParam) {
+                    // Decode data from URL (Serverless mode)
+                    const jsonString = decodeURIComponent(escape(atob(dataParam)));
+                    entity = JSON.parse(jsonString);
+                    entityType = entity.type;
+                } else if (entityTypeParam && entityIdParam) {
+                    // Legacy/Local mode (localStorage)
+                    entityType = entityTypeParam;
+                    const storageKey = entityType === 'supplier' ? 'suppliers' : 'clients';
+                    const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    entity = data.find(item => item.id === entityIdParam);
+                } else {
+                    throw new Error('No data found');
+                }
+
+                if (!entity) {
+                    throw new Error('Entity not found');
+                }
+
+            } catch (e) {
+                console.error(e);
+                publicCard.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Invalid or expired link.</p></div>';
+                return;
+            }
+
+            // Check Overdue
+            const overdue = entityType === 'client' && isOverdue(entity);
+
+            if (overdue) {
+                publicCard.classList.add('overdue');
+            }
+
+            // Set badge
+            badge.textContent = entityType === 'supplier' ? '📤 To Pay' : '📥 To Get Paid';
+            badge.style.background = entityType === 'supplier'
+                ? 'rgba(239, 68, 68, 0.2)'
+                : 'rgba(16, 185, 129, 0.2)';
+            badge.style.color = entityType === 'supplier'
+                ? 'var(--color-pay-light)'
+                : 'var(--color-get-light)';
+
+            // Set name and amount
+            nameEl.textContent = entity.name;
+            amountEl.textContent = `${entity.totalDebt.toFixed(2)} TND`;
+
+            if (!overdue) {
+                amountEl.style.color = entityType === 'supplier'
+                    ? 'var(--color-pay-light)'
+                    : 'var(--color-get-light)';
+            }
+
+            // Extra Info (Due Date & Phone)
+            let extraHtml = '';
+            if (entity.nextDueDate && entityType === 'client') {
+                const date = new Date(entity.nextDueDate);
+                const formattedDate = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                extraHtml += `<div class="due-date-info ${overdue ? 'overdue' : ''}" style="justify-content: center;">📅 Due: ${formattedDate} ${overdue ? '(OVERDUE)' : ''}</div>`;
+            }
+            // Optional: Ask for phone number verification here if strictly needed, 
+            // but for now we just display it if it exists in the data.
+            /* 
+            if (entity.phone) {
+                extraHtml += `<div class="phone-info" style="justify-content: center;">📞 ${entity.phone}</div>`;
+            }
+            */
+            extraInfoEl.innerHTML = extraHtml;
+
+            // Calculate progress
+            const maxDebt = 10000;
+            const percentage = Math.min((entity.totalDebt / maxDebt) * 100, 100);
+            progressFill.style.width = `${percentage}%`;
+            progressPercent.textContent = `${percentage.toFixed(1)}%`;
+
+            // Set progress bar color
+            if (!overdue) {
+                if (entityType === 'supplier') {
+                    progressFill.style.background = 'linear-gradient(90deg, #000000, #333333)';
+                } else {
+                    progressFill.style.background = 'linear-gradient(90deg, #FFD700, #FFC000)';
+                }
+            }
+
+            // Render transactions
+            if (entity.transactions && entity.transactions.length > 0) {
+                transactionList.innerHTML = entity.transactions
+                    .sort((a, b) => b.date - a.date)
+                    .map(transaction => {
+                        const isDebt = transaction.type === 'debt';
+                        const date = new Date(transaction.date);
+                        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+                        return `
+              <div class="transaction-item">
+                <div class="transaction-icon ${transaction.type}">
+                  ${isDebt ? '+' : '-'}
+                </div>
+                <div class="transaction-info">
+                  <div class="transaction-date">${formattedDate}</div>
+                  ${transaction.note ? `<div class="transaction-note">${transaction.note}</div>` : ''}
+                </div>
+                <div class="transaction-amount ${transaction.type}">
+                  ${isDebt ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)} TND
+                </div>
+              </div>
+            `;
+                    })
+                    .join('');
+            } else {
+                transactionList.innerHTML = '<div class="empty-state"><p>No transactions yet.</p></div>';
+            }
+        }
+
+        // Load data on page load
+        loadPublicData();
+    </script>
+</body>
+
+</html>
