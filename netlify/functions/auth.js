@@ -1,7 +1,9 @@
 // Authentication middleware
+import { CONFIG } from './config.js';
+
 export function checkAuth(event) {
   const authHeader = event.headers['authorization'] || event.headers['x-admin-pin'];
-  const pin = process.env.ADMIN_PIN || '1234';
+  const pin = CONFIG.ADMIN_PIN;
 
   if (!authHeader) {
     return {

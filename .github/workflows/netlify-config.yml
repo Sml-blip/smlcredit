@@ -1,0 +1,30 @@
+name: Configure Netlify Environment
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/netlify-config.yml'
+      - 'setup-netlify-env.sh'
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set Netlify Environment Variables
+        run: |
+          curl -X POST "https://api.netlify.com/api/v1/sites/smlcredit/env" \
+            -H "Authorization: Bearer ${{ secrets.NETLIFY_AUTH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d @- << 'EOF'
+          {
+            "key": "NETLIFY_DATABASE_URL",
+            "values": {
+              "production": "postgresql://neondb_owner:npg_NuDlHBFP3K2L@ep-lucky-cell-aeuo47hk-pooler.c-2.us-east-2.aws.neon.tech/smlcredit?sslmode=require&channel_binding=require",
+              "branch-deploy": "postgresql://neondb_owner:npg_NuDlHBFP3K2L@ep-lucky-cell-aeuo47hk-pooler.c-2.us-east-2.aws.neon.tech/smlcredit?sslmode=require&channel_binding=require",
+              "deploy-preview": "postgresql://neondb_owner:npg_NuDlHBFP3K2L@ep-lucky-cell-aeuo47hk-pooler.c-2.us-east-2.aws.neon.tech/smlcredit?sslmode=require&channel_binding=require"
+            }
+          }
+          EOF
