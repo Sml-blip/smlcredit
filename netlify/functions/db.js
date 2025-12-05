@@ -10,24 +10,46 @@ if (!connectionString) {
   throw new Error('Database connection string not set in environment (DATABASE_URL or NETLIFY_DATABASE_URL)');
 }
 
-// Initialize connection pool
-const pool = new Pool({
-  connectionString,
-  ssl: {
-    rejectUnauthorized: false
+// Lazy-load pool for serverless environments (Netlify functions)
+let pool = null;
+
+function getPool() {
+  if (!pool) {
+    pool = new Pool({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false
+      },
+      // Netlify-specific optimizations
+      max: 1,                    // Single connection for functions
+      idleTimeoutMillis: 10000,  // Close idle connections quickly
+      connectionTimeoutMillis: 5000
+    });
+
+    pool.on('error', (err) => {
+      console.error('Unexpected error on idle client', err);
+      // Reset pool to attempt reconnection on next call
+      pool = null;
+    });
   }
-});
+  return pool;
+}
 
 // Helper function to execute queries
 export async function query(text, params = []) {
   const start = Date.now();
   try {
-    const result = await pool.query(text, params);
+    const p = getPool();
+    const result = await p.query(text, params);
     const duration = Date.now() - start;
     console.log('Executed query', { text, duration, rows: result.rowCount });
     return result;
   } catch (error) {
     console.error('Database query error:', error);
+    // Reset pool on error
+    if (pool) {
+      pool = null;
+    }
     throw error;
   }
 }
@@ -46,7 +68,8 @@ export async function getAll(text, params = []) {
 
 // Helper function for transactions
 export async function transaction(callback) {
-  const client = await pool.connect();
+  const p = getPool();
+  const client = await p.connect();
   try {
     await client.query('BEGIN');
     const result = await callback(client);
@@ -60,4 +83,4 @@ export async function transaction(callback) {
   }
 }
 
-export default pool;
+export default getPool();
