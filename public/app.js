@@ -83,6 +83,23 @@ async function loadData() {
   }
 }
 
+// Normalize API returned entity to front-end model
+function normalizeEntity(apiObj, type) {
+  if (!apiObj) return null;
+
+  return {
+    id: apiObj.id,
+    name: apiObj.name,
+    totalDebt: parseFloat(apiObj.total_debt ?? apiObj.totalDebt) || 0,
+    phone: apiObj.phone || '',
+    transactions: apiObj.transactions || [],
+    createdAt: apiObj.created_at,
+    // client-specific
+    dueDay: apiObj.due_day,
+    nextDueDate: apiObj.next_due_date
+  };
+}
+
 // ==================== ADMIN LOGIN ====================
 function checkLogin() {
   const isLoggedIn = sessionStorage.getItem('adminLoggedIn');
@@ -334,11 +351,13 @@ async function addEntity() {
     const endpoint = currentEntityType === 'supplier' ? '/suppliers' : '/clients';
     const result = await apiCall(endpoint, 'POST', entity);
 
+    const normalized = normalizeEntity(result, currentEntityType);
+
     if (currentEntityType === 'supplier') {
-      suppliers.push(result);
+      suppliers.push(normalized);
       renderSuppliers();
     } else {
-      clients.push(result);
+      clients.push(normalized);
       renderClients();
     }
 
@@ -437,8 +456,9 @@ async function addTransaction() {
     // Update local data
     const entity = findEntity(currentEntityType, currentEntityId);
     if (entity) {
-      entity.totalDebt = parseFloat(result.total_debt);
-      entity.transactions = result.transactions || [];
+      const normalized = normalizeEntity(result, currentEntityType);
+      entity.totalDebt = normalized.totalDebt;
+      entity.transactions = normalized.transactions;
     }
 
     if (currentEntityType === 'supplier') {
