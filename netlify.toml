@@ -13,14 +13,13 @@
   status = 200
 
 # Environment variables
+# Note: Production environment variables must be set via Netlify UI > Settings > Build & Deploy > Environment variables
+# or via Netlify API. They are not read from this file.
 [context.production.environment]
   ADMIN_PIN = "1234"
-  NETLIFY_DATABASE_URL = "postgresql://neondb_owner:npg_NuDlHBFP3K2L@ep-lucky-cell-aeuo47hk-pooler.c-2.us-east-2.aws.neon.tech/smlcredit?sslmode=require&channel_binding=require"
 
 [context.deploy-preview.environment]
   ADMIN_PIN = "1234"
-  NETLIFY_DATABASE_URL = "postgresql://neondb_owner:npg_NuDlHBFP3K2L@ep-lucky-cell-aeuo47hk-pooler.c-2.us-east-2.aws.neon.tech/smlcredit?sslmode=require&channel_binding=require"
 
 [context.branch-deploy.environment]
   ADMIN_PIN = "1234"
-  NETLIFY_DATABASE_URL = "postgresql://neondb_owner:npg_NuDlHBFP3K2L@ep-lucky-cell-aeuo47hk-pooler.c-2.us-east-2.aws.neon.tech/smlcredit?sslmode=require&channel_binding=require"

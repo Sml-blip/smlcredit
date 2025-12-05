@@ -5,9 +5,9 @@ const { Pool } = pkg;
 // Fall back to `DATABASE_URL` for compatibility if needed.
 const connectionString = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
 
+// Don't throw at module load time - that breaks Netlify functions
 if (!connectionString) {
-  console.error('Database connection string not set. Please set `DATABASE_URL` or `NETLIFY_DATABASE_URL`.');
-  throw new Error('Database connection string not set in environment (DATABASE_URL or NETLIFY_DATABASE_URL)');
+  console.warn('Warning: Database connection string not set. Queries will fail until DATABASE_URL or NETLIFY_DATABASE_URL is configured.');
 }
 
 // Lazy-load pool for serverless environments (Netlify functions)
@@ -15,6 +15,10 @@ let pool = null;
 
 function getPool() {
   if (!pool) {
+    if (!connectionString) {
+      throw new Error('Database connection string not set in environment (DATABASE_URL or NETLIFY_DATABASE_URL)');
+    }
+    
     pool = new Pool({
       connectionString,
       ssl: {
