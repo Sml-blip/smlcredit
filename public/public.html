@@ -126,7 +126,7 @@
 
             // Set name and amount
             nameEl.textContent = entity.name;
-            amountEl.textContent = `${entity.totalDebt.toFixed(2)} TND`;
+            amountEl.textContent = `${(Number(entity.totalDebt) || 0).toFixed(2)} TND`;
 
             if (!overdue) {
                 amountEl.style.color = entityType === 'supplier'
@@ -152,7 +152,7 @@
 
             // Calculate progress
             const maxDebt = 10000;
-            const percentage = Math.min((entity.totalDebt / maxDebt) * 100, 100);
+            const percentage = Math.min(((Number(entity.totalDebt) || 0) / maxDebt) * 100, 100);
             progressFill.style.width = `${percentage}%`;
             progressPercent.textContent = `${percentage.toFixed(1)}%`;
 
@@ -184,7 +184,7 @@
                   ${transaction.note ? `<div class="transaction-note">${transaction.note}</div>` : ''}
                 </div>
                 <div class="transaction-amount ${transaction.type}">
-                  ${isDebt ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)} TND
+                  ${isDebt ? '+' : '-'}${Math.abs(Number(transaction.amount) || 0).toFixed(2)} TND
                 </div>
               </div>
             `;
