@@ -1,5 +1,5 @@
 // ==================== CONFIG ====================
-const API_BASE = import.meta.env.VITE_API_URL || '/.netlify/functions';
+const API_BASE = '/.netlify/functions';
 const ADMIN_PIN = "1234"; // Default PIN
 
 // ==================== DATA MODEL ====================
