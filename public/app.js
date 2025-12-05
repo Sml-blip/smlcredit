@@ -56,8 +56,8 @@ async function loadData() {
     suppliers = suppliersData.map(s => ({
       id: s.id,
       name: s.name,
-      totalDebt: parseFloat(s.total_debt),
-      phone: s.phone,
+      totalDebt: parseFloat(s.total_debt) || 0,
+      phone: s.phone || '',
       transactions: s.transactions || [],
       createdAt: s.created_at
     }));
@@ -65,8 +65,8 @@ async function loadData() {
     clients = clientsData.map(c => ({
       id: c.id,
       name: c.name,
-      totalDebt: parseFloat(c.total_debt),
-      phone: c.phone,
+      totalDebt: parseFloat(c.total_debt) || 0,
+      phone: c.phone || '',
       dueDay: c.due_day,
       nextDueDate: c.next_due_date,
       transactions: c.transactions || [],
