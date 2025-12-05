@@ -145,7 +145,7 @@ function generateId() {
 }
 
 function formatCurrency(amount) {
-  return `${amount.toFixed(2)} TND`;
+  return `${(Number(amount) || 0).toFixed(2)} TND`;
 }
 
 function formatDate(timestamp) {
@@ -216,7 +216,8 @@ function renderClients() {
 
 function renderEntityCard(entity, type) {
   const maxDebt = 10000;
-  const percentage = Math.min((entity.totalDebt / maxDebt) * 100, 100);
+  const totalDebt = Number(entity.totalDebt) || 0;
+  const percentage = Math.min((totalDebt / maxDebt) * 100, 100);
 
   const overdue = type === 'client' && isOverdue(entity);
   const overdueClass = overdue ? 'overdue' : '';
@@ -272,7 +273,7 @@ function renderEntityCard(entity, type) {
       <div class="progress-container">
         <div class="progress-label">
           <span>Debt Progress</span>
-          <span>${percentage.toFixed(1)}%</span>
+          <span>${(Number(percentage) || 0).toFixed(1)}%</span>
         </div>
         <div class="progress-bar">
           <div class="progress-fill" style="width: ${percentage}%"></div>
