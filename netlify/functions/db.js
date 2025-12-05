@@ -1,8 +1,9 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
-// Prefer Netlify-provided connection string (integration may set NETLIFY_DATABASE_URL)
-const connectionString = process.env.DATABASE_URL || process.env.NETLIFY_DATABASE_URL;
+// Prefer Netlify-provided connection string (integration sets `NETLIFY_DATABASE_URL`).
+// Fall back to `DATABASE_URL` for compatibility if needed.
+const connectionString = process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL;
 
 if (!connectionString) {
   console.error('Database connection string not set. Please set `DATABASE_URL` or `NETLIFY_DATABASE_URL`.');
