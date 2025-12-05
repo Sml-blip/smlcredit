@@ -83,4 +83,4 @@ export async function transaction(callback) {
   }
 }
 
-export default getPool();
+export default getPool;
